@@ -1,0 +1,139 @@
+---
+title: "Personal Budget Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+# importing libraries
+# install.packages(c("flexdashboard","tidyverse","highcharter","gt","htmltools","viridis","DT"))
+# install.packages("read_xl")
+library(flexdashboard)
+library(tidyverse)
+library(highcharter)
+library(gt)
+library(htmltools)
+library(readxl)
+library(viridis)
+library(DT)
+```
+
+```{r}
+#importing data
+df=read_excel("personal finance data.xlsx")
+view(df)
+```
+Data
+=======================================================================
+
+Column {data-width=200}
+-----------------------------------------------------------------------
+
+###
+
+```{r}
+custom_colors <- viridis::mako(n = 2)
+
+df %>% 
+  group_by(`Income/Expense`) %>% 
+  summarise(Amount = sum(`Debit/Credit`)) %>%
+  filter(Amount > 0) %>%
+  hchart('pie', hcaes(x = `Income/Expense`, y = Amount,color = custom_colors)) %>%   hc_add_theme(hc_theme_economist()) %>% 
+  hc_tooltip(pointFormat='<b>Proportion: </b> {point.percentage:,.2f}%') %>% 
+  hc_title(text = 'Income Vs Expenses',
+           style = list(fontSize = '15px', fontWeight = 'bold'))
+```
+
+###
+
+```{r}
+custom_colors <- viridis::mako(n = 6)
+
+df %>% 
+  group_by(Category) %>% 
+  summarise(Amount = sum(ifelse(`Income/Expense` == "Expense", `Debit/Credit`, 0))) %>%
+  filter(Amount > 0) %>%
+  hchart('pie', hcaes(x = Category, y = Amount,color = custom_colors)) %>%   hc_add_theme(hc_theme_economist()) %>% 
+  hc_tooltip(pointFormat='<b>Proportion: </b> {point.percentage:,.2f}%') %>% 
+  hc_title(text = 'Category-wise Expense',
+           style = list(fontSize = '15px', fontWeight = 'bold'))
+```
+
+Column {data-width=450}
+-----------------------------------------------------------------------
+###
+
+```{r}
+custom_colors <- viridis::mako(n = 12)
+
+df %>% 
+  filter(`Income/Expense` == "Expense") %>%
+  group_by(Month) %>%
+  summarise(Amount = sum(`Debit/Credit`)) %>%
+  hchart('column', hcaes(x = Month, y = Amount,color = custom_colors)) %>%   hc_add_theme(hc_theme_economist()) %>% 
+  hc_tooltip(pointFormat = '<b>Amount Spent: </b> {point.y} <br>') %>% 
+  hc_title(text = '<b>Monthly Expenses </b>',
+           style = list(fontSize = '25px', fontWeight = 'bold'))
+```
+Column {data-width=350}
+-----------------------------------------------------------------------
+### **Personal Budget Dashboard**
+
+
+**Overview:**<br>
+The Personal Budget Dashboard provides a comprehensive view of an individual’s financial health. It allows users to track income, expenses, and key performance indicators. Here are the essential components:
+<br><br>
+**Dashboard Purpose:**<br>
+-> The dashboard aims to help users manage their finances effectively.<br>
+-> It provides insights into spending patterns, budget adherence, and financial goals.<br><br>
+**Audience:**<br>
+-> The intended audience includes individuals, families, or small business owners.<br>
+-> Users seeking clarity on their financial situation will benefit from this dashboard.<br><br>
+**Key Features:**<br>
+**Income vs Expense**<br>
+-> Pie Chart: Visualizes the balance between income (green) and expenses (blue).<br>
+-> Category Breakdown: Shows expense categories (e.g., transportation, food, household) in a separate pie chart.<br><br>
+**Month-wise Expenses**<br>
+-> Bar Graph: Displays monthly expenses from January to September.<br>
+-> Users can track trends, identify peak spending months, and make informed decisions.
+
+
+### **Category-wise Data**
+
+```{r}
+df1<-df%>%
+  filter(`Income/Expense` == "Expense") %>%
+  group_by(Category)%>%
+  summarise(Amount = sum(`Debit/Credit`))%>%
+  arrange(desc(Amount)) %>% 
+  select(Category, Amount)
+# HTML table
+datatable(df1)
+```
+
+
+Table
+=======================================================================
+
+Column
+-----------------------------------------------------------------------
+
+```{r}
+# HTML table
+div(style = 'height:600px; overflow-y:scroll', gt(df) %>% 
+      tab_header(title = md('<b>Data Utilized for this Dashboard</b>')) %>% 
+      opt_table_font(font = list(google_font('Chivo'), default_fonts())) %>% 
+      tab_style(location = cells_column_labels(columns = everything()),
+                style = list(cell_borders(sides = 'bottom', 
+                                          weight = px(2)), 
+                             cell_text(weight = 'bold'))) %>% 
+      tab_options(table.font.size = px(12L),
+                  table.border.top.style = 'bold',
+                  column_labels.border.bottom.width = 2,
+                  table_body.border.top.style = 'bold',
+                  data_row.padding = px(3))
+    )
+```
+
